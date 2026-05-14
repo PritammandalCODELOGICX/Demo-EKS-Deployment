@@ -15,7 +15,7 @@ spec:
     spec:
       containers:
       - name: hello-world
-        image: 123456789.dkr.ecr.ap-south-1.amazonaws.com/hello-world-nodejs:latest
+        image: 585853585762.dkr.ecr.ap-south-1.amazonaws.com/helloworld-ecr-njs
         # ↑ CI will auto-replace 'latest' with actual commit SHA on every push
         ports:
         - containerPort: 3000

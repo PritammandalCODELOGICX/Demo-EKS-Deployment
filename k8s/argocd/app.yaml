@@ -6,8 +6,8 @@ metadata:
 spec:
   project: default
   source:
-    repoURL: https://github.com/YOUR_USERNAME/hello-world-nodejs
-    targetRevision: main
+    repoURL: https://github.com/PritammandalCODELOGICX/Demo-EKS-Deployment.git
+    targetRevision: master
     path: k8s
   destination:
     server: https://kubernetes.default.svc
