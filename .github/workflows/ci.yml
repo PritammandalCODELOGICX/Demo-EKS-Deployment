@@ -1,0 +1,66 @@
+name: CI — Build and Push to ECR
+
+on:
+  push:
+    branches: master
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v3
+      with:
+        token: ${{ secrets.GITHUB_TOKEN }}
+      # Why: pulls your code into the GitHub Actions runner machine
+
+    - name: Configure AWS credentials
+      uses: aws-actions/configure-aws-credentials@v2
+      with:
+        aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+        aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+        aws-region: ${{ secrets.AWS_REGION }}
+      # Why: lets GitHub Actions talk to your AWS account
+
+    - name: Login to Amazon ECR
+      id: login-ecr
+      uses: aws-actions/amazon-ecr-login@v1
+      # Why: authenticates Docker to push images to your ECR registry
+
+    - name: Run tests
+      run: npm install && npm test
+      # Why: never push a broken image. tests must pass first.
+
+    - name: Build Docker image
+      id: build
+      env:
+        ECR_REGISTRY: ${{ secrets.ECR_REGISTRY }}
+        ECR_REPOSITORY: ${{ secrets.ECR_REPOSITORY }}
+        IMAGE_TAG: ${{ github.sha }}
+      run: |
+        docker build -t $ECR_REGISTRY/$ECR_REPOSITORY:$IMAGE_TAG .
+        docker push $ECR_REGISTRY/$ECR_REPOSITORY:$IMAGE_TAG
+        echo "image=$ECR_REGISTRY/$ECR_REPOSITORY:$IMAGE_TAG" >> $GITHUB_OUTPUT
+      # Why: packages app into Docker image, tags with commit SHA
+      # (commit SHA = unique ID per push, e.g. a3f9c12)
+      # pushes to ECR so EKS can pull it
+
+    - name: Update image tag in deployment.yaml
+      env:
+        ECR_REGISTRY: ${{ secrets.ECR_REGISTRY }}
+        ECR_REPOSITORY: ${{ secrets.ECR_REPOSITORY }}
+        IMAGE_TAG: ${{ github.sha }}
+      run: |
+        sed -i "s|image:.*|image: $ECR_REGISTRY/$ECR_REPOSITORY:$IMAGE_TAG|" \
+          k8s/deployment.yaml
+        git config user.name "github-actions[bot]"
+        git config user.email "github-actions[bot]@users.noreply.github.com"
+        git add k8s/deployment.yaml
+        git commit -m "ci: update image tag to $IMAGE_TAG [skip ci]"
+        git push
+      # Why: THIS is the CI → CD handoff.
+      # ArgoCD watches deployment.yaml in Git.
+      # When CI updates the image tag here, ArgoCD sees the change
+      # and deploys the new version to EKS automatically.
+      # [skip ci] prevents an infinite loop of CI triggering itself.
