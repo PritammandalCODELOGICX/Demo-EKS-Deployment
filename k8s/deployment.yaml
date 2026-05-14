@@ -16,7 +16,7 @@ spec:
       containers:
       - name: hello-world
         image: 585853585762.dkr.ecr.ap-south-1.amazonaws.com/helloworld-ecr-njs
-        # ↑ CI will auto-replace 'latest' with actual commit SHA on every push
+        # ↑ CI will auto-replace 'latest' with actual commit SHA on every push 1
         ports:
         - containerPort: 3000
         readinessProbe:
