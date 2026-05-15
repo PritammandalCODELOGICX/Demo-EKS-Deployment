@@ -5,8 +5,8 @@ metadata:
   namespace: production
 spec:
   selector:
-    app: hello-world      ← matches label in deployment.yaml
+    app: hello-world      
   ports:
   - port: 80
-    targetPort: 3000      ← your app runs on 3000, service maps 80→3000
+    targetPort: 3000      
   type: ClusterIP
